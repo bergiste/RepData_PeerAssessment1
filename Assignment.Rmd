@@ -4,6 +4,10 @@ output:
   html_document:
     keep_md: true
 ---
+```{r setoptions, echo=FALSE, warning=FALSE, message=FALSE}
+library(knitr)
+opts_chunk$set(warning = FALSE, message = FALSE)
+```
 
 The following document represents an example of reproducible research. We will analyze a data set about user steps activity from a smart phone.
 
@@ -18,16 +22,15 @@ unzip(fileName, exdir = "data")
 data <- read.csv("data/activity.csv")
 ```
 ## What is mean total number of steps taken per day?
-```{r warning=FALSE, message=FALSE}
+```{r}
 library(dplyr)
-library(ggplot2)
 summarizedData <- summarise(group_by(data, date),  
     total = sum(steps, na.rm = T)
 )
 
 hist(summarizedData$total, main = "Total Steps Per Day", xlab = "Number of Steps")
-mean(summarizedData$total, na.rm= T)
-median(summarizedData$total, na.rm= T)
+paste("Average number of steps", ceiling(mean(summarizedData$total, na.rm= T)))
+paste("Median number of steps", median(summarizedData$total, na.rm= T))
 ```
 
 ## What is the average daily activity pattern?
@@ -39,6 +42,25 @@ activityPattern[activityPattern$avgSteps == max(activityPattern$avgSteps),1]
 
 ## Imputing missing values
 ```{r}
+paste("Total missing values:", sum(is.na(data$steps) == TRUE))
+
+missingVals <- data[is.na(data$steps),c(2:3)]
+hasVals <- data[is.na(data$steps) == FALSE,]
+avgInterval <- summarise(group_by(hasVals, interval), steps = ceiling(mean(steps)))
+
+filledData <- inner_join(missingVals, avgInterval, by = 'interval')
+
+newData <- rbind(hasVals, filledData)
+
+# Report on data set with filled in values
+summarizedData <- summarise(group_by(newData, date),  
+    total = sum(steps, na.rm = T)
+)
+
+hist(summarizedData$total, main = "Total Steps Per Day", xlab = "Number of Steps")
+paste("Average number of steps", round(mean(summarizedData$total, na.rm= T), digits = 2))
+paste("Median number of steps", median(summarizedData$total, na.rm= T))
+
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?

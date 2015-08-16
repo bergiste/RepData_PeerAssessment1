@@ -4,4 +4,5 @@
 
 *.RData
 
-Assignment_cache/*
+PA1_template_files/*
+PA1_template_cache/*

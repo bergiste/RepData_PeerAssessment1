@@ -12,6 +12,7 @@ opts_chunk$set(warning = FALSE, message = FALSE)
 The following document represents an example of reproducible research. We will analyze a data set about user steps activity from a smart phone.
 
 ## Loading and preprocessing the data
+We will load the data from the data source (a URL from the web), unzip it, save it locally, and read it into R for further analysis. This portion of code is also cached for efficiency.
 ```{r cache=TRUE}
 url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 fileName <- "data/activity.zip"
@@ -29,8 +30,10 @@ summarizedData <- summarise(group_by(data, date),
 )
 
 hist(summarizedData$total, main = "Total Steps Per Day", xlab = "Number of Steps")
-paste("Average number of steps", ceiling(mean(summarizedData$total, na.rm= T)))
-paste("Median number of steps", median(summarizedData$total, na.rm= T))
+avgStepsDay <- ceiling(mean(summarizedData$total, na.rm= T))
+medianStepsDay <- median(summarizedData$total, na.rm= T)
+paste("Average number of steps", avgStepsDay)
+paste("Median number of steps", medianStepsDay)
 ```
 
 ## What is the average daily activity pattern?
@@ -41,6 +44,7 @@ activityPattern[activityPattern$avgSteps == max(activityPattern$avgSteps),1]
 ```
 
 ## Imputing missing values
+See the total number of missing values below. To fill in the missing values, we will calculate the average steps for each interval across the entire data set and use that average for any missing value with the corresponding interval.
 ```{r}
 paste("Total missing values:", sum(is.na(data$steps) == TRUE))
 
@@ -58,11 +62,23 @@ summarizedData <- summarise(group_by(newData, date),
 )
 
 hist(summarizedData$total, main = "Total Steps Per Day", xlab = "Number of Steps")
-paste("Average number of steps", round(mean(summarizedData$total, na.rm= T), digits = 2))
-paste("Median number of steps", median(summarizedData$total, na.rm= T))
-
+newAvgStepsDay <- ceiling(mean(summarizedData$total, na.rm= T))
+newMedianStepsDay <- median(summarizedData$total, na.rm= T)
+paste("Average number of steps", newAvgStepsDay, 
+      "compared to", avgStepsDay, 
+      "without imputing missing values. This is a difference of", newAvgStepsDay - avgStepsDay, "steps")
+paste("Median number of steps", newMedianStepsDay,
+      "compared to", medianStepsDay, 
+      "without imputing missing values. This is a difference of", newMedianStepsDay - medianStepsDay, "steps")
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r}
+library(lattice)
+categorizedData <- mutate(newData, day = weekdays(as.Date(date)))
+categorizedData <- mutate(categorizedData, dayCat = ifelse(day %in% c("Saturday", "Sunday"), "Weekend", "Weekday" ))
+
+finalData <- summarise(group_by(categorizedData,interval, dayCat), avgSteps = mean(steps))
+
+xyplot(avgSteps ~ interval | dayCat, data = finalData,layout=c(1,2),type="l", ylab = "Number of steps")
 ```
